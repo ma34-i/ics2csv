@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  工数表:
+
+  <form name='test'> 
+    <input type="file" id="files" name="files[]" multiple />
+    <output id="list"></output>
+    <br>
+    <textarea name="txt" rows="10" cols="50" readonly></textarea>
+    <br>
+    <div id="example-table"></div>
+  </form>
+
+  <script>
+    document.getElementById('files').addEventListener('change', handleFileSelect, false);
+
+
+    function handleFileSelect(evt) {
+      //ファイルが追加された時に呼ばれる関数
+      var files = evt.target.files;
+      var output = [];
+      var f = files[0];
+      var eventList = []; //イベント(1つの予定に相当する)のリスト
+
+      output.push(escape(f.name) + 'の変換結果です'+'<br>' + escape(f.type));
+
+      //ファイル型例外処理(不十分)
+      if (f.type && f.type.indexOf('text') === -1) {
+        console.log('File is not a calendar.', f.type, f);
+        return;
+      }
+
+      //ファイル読み込み
+      var reader = new FileReader();
+      reader.readAsText(f);
+
+      //読み込み時の処理
+      reader.onload = function(ev){
+        //テキスト形式からイベント型へ変換する
+        events = convText2Event(reader.result);
+        //表示
+        displayEvents(events);
+      }
+    }
+
+    function Event(name, categories, start, end){
+      //イベント型を定義
+      this.name = name;
+      this.categories = categories;
+      this.start = start;
+      this.end = end;
+    }
+
+    function getAttributeFromEvent(eventString, key){
+      //テキストから属性情報を取得する関数
+      //eventString: 単一イベントを表す文字列
+      //key: 各種属性
+      var re = new RegExp(key+":.*");
+      var reHeader = new RegExp(key+":");
+      attribute = re.exec(eventString.split('\n'));
+      if(attribute!=null){
+        attribute = attribute[0].replace(reHeader, "")
+      }
+      return attribute
+    }
+
+    function convText2Event(text){
+      var events = [];
+      //イベントごとに分解
+      rawTxtArr = text.split('BEGIN:VEVENT');
+      //分類
+      for(let i=1; i<rawTxtArr.length; i++){
+        events[i-1] = new Event(
+          name       = getAttributeFromEvent(rawTxtArr[i],'SUMMARY.*'),
+          categories = getAttributeFromEvent(rawTxtArr[i],'CATEGORIES'),
+          start      = getAttributeFromEvent(rawTxtArr[i],'DTSTART.*"'),
+          end        = getAttributeFromEvent(rawTxtArr[i],'DTEND.*')
+        )
+      }
+      return events;
+    }
+
+    function displayEvents(eventList){
+      //テキストエリアに表示する
+      txtarea = document.getElementById('txt');
+      str = '';
+      for(let i=0; i<events.length; i++){
+        str = str + events[i].start + ',     ' + events[i].end + ',     ' + events[i].name + ',       ' + events[i].categories + ',      ' +  '\n'
+      }
+
+      document.test.txt.value = str;
+      console.log(eventList);
+      
+      //表の作成
+
+      //画面更新
+      //document.getElementById('list').innerHTML = '<ul>' + output.join('') + '</ul>';
+    }
+
+  </script>
+</body>
+</html>
